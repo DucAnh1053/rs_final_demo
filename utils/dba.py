@@ -1,4 +1,10 @@
 import os
+import sys
+
+current_dir = os.path.dirname(__file__)
+project_root = os.path.abspath(os.path.join(current_dir, "../"))
+sys.path.append(project_root)
+
 from dotenv import load_dotenv
 import logging
 from mongoengine import (
@@ -31,6 +37,7 @@ logging.basicConfig(filename="log/db_operations.log", level=logging.ERROR)
 uri = f"mongodb+srv://{username}:{password}@cluster0.czn0pgn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 connect(db=database_name, host=uri)
+print("Connected to MongoDB")
 
 
 class QuestionDBA:

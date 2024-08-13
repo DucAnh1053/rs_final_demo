@@ -3,6 +3,8 @@ from mongoengine import (
     StringField,
     ListField,
     IntField,
+    FloatField,
+    BooleanField,
     DateTimeField,
     ObjectIdField,
 )
@@ -36,10 +38,11 @@ class Interaction(Document):
     selection_change = IntField(required=True)
     start_time = DateTimeField(required=True)
     end_time = DateTimeField(required=True)
-    time_span = IntField(required=True)
+    hint_used = BooleanField(required=True)
+    time_span = FloatField(required=True)
     difficulty_feedback = IntField(required=True)
     trust_feedback = IntField(required=True)
-    answer_status = StringField(required=True)
+    answer_status = BooleanField(required=True)
     student_id = StringField(required=True)
     question_id = StringField(required=True)
 
