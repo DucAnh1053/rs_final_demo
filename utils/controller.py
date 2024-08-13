@@ -38,7 +38,7 @@ def get_merged_and_cleaned_data():
         questions_df,
         interaction_df,
         how="inner",
-        left_on="id",
+        left_on="_id",
         right_on="question_id",
     )
     data_df.drop(
