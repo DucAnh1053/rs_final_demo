@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import logging
 from mongoengine import (
     connect,
@@ -13,11 +15,22 @@ from mongoengine import (
 from pymongo.errors import WriteError, WriteConcernError
 from utils.dbo import Question, Student, Interaction
 
-# Setup logging
-logging.basicConfig(filename="db_operations.log", level=logging.ERROR)
 
-# Example connection (you need to update with your DB details)
-connect(db="quiz_system", host="localhost", port=27017)
+# Load environment variables from the .env file
+load_dotenv()
+
+# Retrieve MongoDB credentials from environment variables
+username = os.getenv("MONGODB_USERNAME")
+password = os.getenv("MONGODB_PASSWORD")
+database_name = os.getenv("MONGODB_DB_NAME")
+
+# Setup logging
+logging.basicConfig(filename="log/db_operations.log", level=logging.ERROR)
+
+# Construct the MongoDB URI
+uri = f"mongodb+srv://{username}:{password}@cluster0.czn0pgn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+connect(db=database_name, host=uri)
 
 
 class QuestionDBA:
