@@ -42,10 +42,18 @@ class Dataset:
     def get_question_ix(self, id):
         return self.question_id_to_ix[id]
 
-    def build_sparse_player_ques(self):
+    def build_sparse_with_ratings(self):
         return sparse.csr_matrix(
             (
                 self.observations,
+                (self.observation_players, self.observation_questions),
+            )
+        )
+        
+    def build_sparse(self):
+        return sparse.csr_matrix(
+            (
+                np.ones_like(self.observations),
                 (self.observation_players, self.observation_questions),
             )
         )
