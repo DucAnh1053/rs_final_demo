@@ -1,17 +1,24 @@
 import numpy as np
 
 
-def __performance(answer_state, difficulty, difficulty_feedback, time_taken, n):
+def __performance(answer_state, difficulty, difficulty_feedback, time_taken, k, mid):
     time_taken = np.where(time_taken < 0, 0, time_taken)
     difficulty_feedback = np.where(
         difficulty_feedback == 0, difficulty, difficulty_feedback
     )
-    return (
-        answer_state
-        * difficulty
-        / difficulty_feedback
-        / (1 + np.emath.logn(n, 1 + time_taken))
-        / 3
+    diff = time_taken - mid
+
+    return np.where(
+        diff < 0,
+        (answer_state * difficulty / difficulty_feedback / (1 + np.exp(k * diff)) / 3),
+        (
+            answer_state
+            * difficulty
+            * (1 + np.exp(-k * diff))
+            / difficulty_feedback
+            / (1 + np.exp(-k * diff))
+            / 3
+        ),
     )
 
 
@@ -33,12 +40,16 @@ def calculate_rating(
     w1=0.6,
     w2=0.2,
     w3=0.2,
-    n=60,
-    k=0.05,
+    k1=0.1,
+    k2=0.05,
+    mid=60,
 ):
     return (
-        w1 * __performance(answer_state, difficulty, difficulty_feedback, time_taken, n)
-        + w2 * __efficiency(selection_change, k)
+        w1
+        * __performance(
+            answer_state, difficulty, difficulty_feedback, time_taken, k1, mid
+        )
+        + w2 * __efficiency(selection_change, k2)
         + w3 * __strategy(hint_used)
     )
 
