@@ -3,6 +3,7 @@ import pandas as pd
 import scipy.sparse as sparse
 from utils import controller
 from utils.tools import calculate_rating, map_id_ix
+import pickle
 
 
 class Dataset:
@@ -42,24 +43,35 @@ class Dataset:
     def get_question_ix(self, id):
         return self.question_id_to_ix[id]
 
-    def build_sparse_with_ratings(self):
+    def build_sparse_with_ratings(self, shape=None):
         return sparse.csr_matrix(
             (
                 self.observations,
                 (self.observation_players, self.observation_questions),
-            )
+            ),
+            shape=shape,
         )
-        
-    def build_sparse(self):
+
+    def build_sparse(self, shape=None):
         return sparse.csr_matrix(
             (
                 np.ones_like(self.observations),
                 (self.observation_players, self.observation_questions),
-            )
+            ),
+            shape=shape,
         )
 
     def add_new_data(self, data):
         pass
+
+    def save(self, path):
+        with open("dataset.pkl", "wb") as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def load(cls, path):
+        with open(path, "rb") as file:
+            return pickle.load(file)
 
     @classmethod
     def get_data_from_mongo(cls, player_ids=None):
