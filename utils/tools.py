@@ -61,3 +61,23 @@ def map_id_ix(ids):
         id_to_ix[id] = ix
         ix_to_id[ix] = id
     return id_to_ix, ix_to_id
+
+def check_random_state(random_state):
+    """Validate the random state.
+
+    Check a random seed or existing numpy rng
+    and get back an initialized numpy.randon.Generator
+
+    Parameters
+    ----------
+    random_state : int, None, np.random.RandomState or np.random.Generator
+        The existing RandomState. If None, or an int, will be used
+        to seed a new numpy RandomState.
+    """
+    # backwards compatibility
+    if isinstance(random_state, np.random.RandomState):
+        return np.random.default_rng(random_state.rand_int(2**31))
+
+    # otherwise try to initialize a new one, and let it fail through
+    # on the numpy side if it doesn't work
+    return np.random.default_rng(random_state)

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sparse
 from utils import controller
-from utils.tools import calculate_rating, map_id_ix
+from utils.tools import calculate_rating, map_id_ix, check_random_state
 import pickle
 
 
@@ -15,7 +15,10 @@ class Dataset:
         ix_to_player_id,
         observation_players,
         observation_questions,
-        observations,
+        weights,
+        answer_state,
+        player_features=None,
+        question_features=None,
     ):
         self.question_id_to_ix = question_id_to_ix
         self.ix_to_question_id = ix_to_question_id
@@ -23,9 +26,12 @@ class Dataset:
         self.ix_to_player_id = ix_to_player_id
         self.observation_players = observation_players
         self.observation_questions = observation_questions
-        self.observations = observations
+        self.weights = weights
+        self.answer_state = answer_state
+        self.player_features = player_features
+        self.question_features = question_features
 
-    def n_users(self):
+    def n_players(self):
         return len(self.player_id_to_ix)
 
     def n_items(self):
@@ -43,23 +49,79 @@ class Dataset:
     def get_question_ix(self, id):
         return self.question_id_to_ix[id]
 
-    def build_sparse_with_ratings(self, shape=None):
+    def get_numpy_weights(self):
+        return np.array(self.weights)
+
+    def build_sparse_weights(self, shape=None):
         return sparse.csr_matrix(
             (
-                self.observations,
+                self.weights,
                 (self.observation_players, self.observation_questions),
             ),
             shape=shape,
         )
 
-    def build_sparse(self, shape=None):
-        return sparse.csr_matrix(
+    def get_player_question_interaction(self):
+        return np.column_stack((self.observation_players, self.observation_questions))
+
+    def train_test_split_sparse(self, train_percentage=0.8, random_state=None):
+        ratings = self.build_sparse_weights().tocoo()
+        random_state = check_random_state(random_state)
+        random_index = random_state.random(len(ratings.data))
+        train_index = random_index < train_percentage
+        test_index = random_index >= train_percentage
+
+        train = sparse.csr_matrix(
             (
-                np.ones_like(self.observations),
-                (self.observation_players, self.observation_questions),
+                ratings.data[train_index],
+                (ratings.row[train_index], ratings.col[train_index]),
             ),
-            shape=shape,
+            shape=ratings.shape,
+            dtype=ratings.dtype,
         )
+
+        test = sparse.csr_matrix(
+            (
+                ratings.data[test_index],
+                (ratings.row[test_index], ratings.col[test_index]),
+            ),
+            shape=ratings.shape,
+            dtype=ratings.dtype,
+        )
+
+        test.data[test.data < 0] = 0
+        test.eliminate_zeros()
+
+        return train, test
+
+    def train_test_split_interaction(self, train_percentage=0.8, random_state=None):
+        random_state = check_random_state(random_state)
+        random_index = random_state.random(len(self.observation_players))
+        train_index = random_index < train_percentage
+        test_index = random_index >= train_percentage
+
+        player_arr = np.array(self.observation_players)
+        question_arr = np.array(self.observation_questions)
+
+        x_train = np.column_stack(
+            (
+                player_arr[train_index],
+                question_arr[train_index],
+            )
+        )
+
+        y_train = np.array(self.weights)[train_index]
+
+        x_test = np.column_stack(
+            (
+                player_arr[test_index],
+                question_arr[test_index],
+            )
+        )
+
+        y_test = np.array(self.weights)[test_index]
+
+        return x_train, y_train, x_test, y_test
 
     def add_new_data(self, data):
         pass
@@ -81,6 +143,19 @@ class Dataset:
         question_id_to_ix, ix_to_question_id = map_id_ix(
             data_df["question_id"].unique()
         )
+        data_df["student_ix"] = data_df["student_id"].map(player_id_to_ix)
+        data_df["question_ix"] = data_df["question_id"].map(question_id_to_ix)
+
+        player_features = pd.get_dummies(
+            data_df[["student_ix", "specialization"]].drop_duplicates(),
+            columns=["specialization"],
+            dummy_na=True,
+        )
+        question_features = pd.get_dummies(
+            data_df[["question_ix", "knowledge_id"]].drop_duplicates(),
+            columns=["knowledge_id"],
+            dummy_na=True,
+        )
 
         ratings = calculate_rating(
             data_df["answer_status"].values,
@@ -96,9 +171,10 @@ class Dataset:
             ix_to_question_id=ix_to_question_id,
             player_id_to_ix=player_id_to_ix,
             ix_to_player_id=ix_to_player_id,
-            observation_players=data_df["student_id"].map(player_id_to_ix).to_list(),
-            observation_questions=data_df["question_id"]
-            .map(question_id_to_ix)
-            .to_list(),
-            observations=ratings.tolist(),
+            observation_players=data_df["student_ix"].to_list(),
+            observation_questions=data_df["question_ix"].to_list(),
+            weights=ratings.tolist(),
+            answer_state=data_df["answer_status"].to_list(),
+            player_features=player_features.values,
+            question_features=question_features.values,
         )

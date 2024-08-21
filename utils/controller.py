@@ -31,31 +31,42 @@ def get_student_dataframe():
 
 
 def get_merged_and_cleaned_data():
+    students_df = get_student_dataframe()
     questions_df = get_question_dataframe()
     interaction_df = get_interaction_dataframe()
 
+    # Merge dataframes
+    merged_df = pd.merge(
+        students_df, interaction_df, left_on="_id", right_on="student_id", how="right"
+    )
     data_df = pd.merge(
         questions_df,
-        interaction_df,
+        merged_df,
         how="inner",
         left_on="_id",
         right_on="question_id",
     )
+
+    del students_df, questions_df, interaction_df, merged_df
+
+    # Drop unnecessary columns
     data_df.drop(
         columns=[
-            "_id_x",
-            "_id_y",
+            "_id",
             "answer",
             "correct_answer",
-            "knowledge_id",
             "title",
             "content",
+            "_id_x",
+            "birth_year",
+            "full_name",
+            "email",
+            "specialization_name",
+            "_id_y",
             "trust_feedback",
         ],
         inplace=True,
     )
-
-    del questions_df, interaction_df
 
     data_df.sort_values(by="start_time", inplace=True)
     data_df.drop_duplicates(
