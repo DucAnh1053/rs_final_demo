@@ -1,4 +1,75 @@
 import numpy as np
+from tqdm import tqdm
+from collections import defaultdict
+
+
+def ranking_metrics_at_k_rankfm(
+    model, x_train, y_train, x_test, y_test, K=10, show_progress=True, num_threads=1
+):
+    users = int(max(np.max(x_train[:, 0]), np.max(x_test[:, 0])) + 1)
+    items = int(max(np.max(x_train[:, 1]), np.max(x_test[:, 1])) + 1)
+
+    # Construct test set dictionary
+    test_dict = defaultdict(set)
+    for (user, item), value in zip(x_test, y_test):
+        if value > 0:  # Assuming positive values mean relevant items
+            test_dict[user].add(item)
+
+    relevant, pr_div, total = 0.0, 0.0, 0.0
+    mean_ap, ndcg, mean_auc = 0.0, 0.0, 0.0
+
+    cg = 1.0 / np.log2(np.arange(2, K + 2))
+    cg_sum = np.cumsum(cg)
+
+    batch_size = 1000
+    start_idx = 0
+
+    # Users who have at least one item in the test set
+    to_generate = np.array(list(test_dict.keys()), dtype="int32")
+
+    progress = tqdm(total=len(to_generate), disable=not show_progress)
+
+    while start_idx < len(to_generate):
+        batch = to_generate[start_idx : start_idx + batch_size]
+        ids = model.recommend(batch, n_items=10, filter_previous=True, cold_start="nan")
+        start_idx += batch_size
+
+        for batch_idx in range(len(batch)):
+            u = batch[batch_idx]
+            likes = test_dict[u]
+
+            pr_div += min(K, len(likes))
+            ap = 0.0
+            hit = 0.0
+            miss = 0.0
+            auc = 0.0
+            idcg = cg_sum[min(K, len(likes)) - 1]
+            num_pos_items = len(likes)
+            num_neg_items = items - num_pos_items
+
+            for i in range(K):
+                if ids.loc[u, i] in likes:
+                    relevant += 1
+                    hit += 1
+                    ap += hit / (i + 1)
+                    ndcg += cg[i] / idcg
+                else:
+                    miss += 1
+                    auc += hit
+            auc += ((hit + num_pos_items) / 2.0) * (num_neg_items - miss)
+            mean_ap += ap / min(K, len(likes))
+            mean_auc += auc / (num_pos_items * num_neg_items)
+            total += 1
+
+        progress.update(len(batch))
+
+    progress.close()
+    return {
+        "precision": relevant / pr_div,
+        "map": mean_ap / total,
+        "ndcg": ndcg / total,
+        "auc": mean_auc / total,
+    }
 
 
 def __performance(answer_state, difficulty, difficulty_feedback, time_taken, k, mid):
@@ -61,6 +132,7 @@ def map_id_ix(ids):
         id_to_ix[id] = ix
         ix_to_id[ix] = id
     return id_to_ix, ix_to_id
+
 
 def check_random_state(random_state):
     """Validate the random state.
