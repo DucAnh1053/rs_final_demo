@@ -1,0 +1,8 @@
+numpy
+pandas
+scipy
+mongoengine
+python-dotenv
+implicit
+git+https://github.com/ErraticO/rankfm.git
+streamlit
