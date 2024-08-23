@@ -26,13 +26,13 @@ Activate the virtual environment:
 - On Windows:
 
     ```bash
-    .\venv\Scripts\activate
+    .\env\Scripts\activate
     ```
 
 - On macOS/Linux:
 
     ```bash
-    source venv/bin/activate
+    source env/bin/activate
     ```
 
 ## Step 4: Install Dependencies
