@@ -61,6 +61,15 @@ class QuestionDBA:
         except DoesNotExist:
             logging.error(f"Question with id {question_id} does not exist.")
             return None
+        
+    @staticmethod
+    def get_question_by_ids(question_ids):
+        try:
+            questions = Question.objects(_id__in=question_ids)
+            return list(questions)  # Return as a list of Question objects
+        except Exception as e:
+            logging.error(f"Error retrieving questions {question_ids}: {e}")
+            return None
 
     @staticmethod
     def get_all_questions():

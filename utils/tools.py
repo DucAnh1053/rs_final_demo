@@ -2,6 +2,25 @@ import numpy as np
 from tqdm import tqdm
 from collections import defaultdict
 
+specialization_names = {
+    "College of Arts and Social Sciences": "specialization_5",
+    "College of Asia and the Pacific": "specialization_6",
+    "College of Business and Economics": "specialization_7",
+    "College of Engineering and Computer Science": "specialization_8",
+    "College of Health and Medicine": "specialization_9",
+    "College of Law": "specialization_10",
+    "College of Science": "specialization_11",
+    "College of University Scholars": "specialization_12",
+    "Not Specified": "specialization_nan",
+}
+
+
+def recommend_cold_start(model, feature_ix, n=10):
+    fea_emb = model.v_uf[feature_ix]
+    rankings = fea_emb @ model.v_i.T
+
+    return np.argsort(rankings)[:-n:-1]
+
 
 def ranking_metrics_at_k_rankfm(
     model, x_train, y_train, x_test, y_test, K=10, show_progress=True, num_threads=1

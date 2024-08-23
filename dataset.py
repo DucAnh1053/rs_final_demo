@@ -19,6 +19,7 @@ class Dataset:
         answer_state,
         player_features=None,
         question_features=None,
+        player_feature_to_ix=None,
     ):
         self.question_id_to_ix = question_id_to_ix
         self.ix_to_question_id = ix_to_question_id
@@ -30,6 +31,7 @@ class Dataset:
         self.answer_state = answer_state
         self.player_features = player_features
         self.question_features = question_features
+        self.player_feature_to_ix = player_feature_to_ix
 
     def n_players(self):
         return len(self.player_id_to_ix)
@@ -60,6 +62,9 @@ class Dataset:
             ),
             shape=shape,
         )
+
+    def get_player_feature_ix(self, feature):
+        return self.player_feature_to_ix[feature]
 
     def get_player_question_interaction(self):
         return np.column_stack((self.observation_players, self.observation_questions))
@@ -136,7 +141,7 @@ class Dataset:
             return pickle.load(file)
 
     @classmethod
-    def get_data_from_mongo(cls, player_ids=None):
+    def get_data_from_mongo(cls):
         data_df = controller.get_merged_and_cleaned_data()
 
         player_id_to_ix, ix_to_player_id = map_id_ix(data_df["student_id"].unique())
@@ -177,4 +182,7 @@ class Dataset:
             answer_state=data_df["answer_status"].to_list(),
             player_features=player_features.values,
             question_features=question_features.values,
+            player_feature_to_ix={
+                col_name: i for i, col_name in enumerate(player_features.columns[1:])
+            },
         )
