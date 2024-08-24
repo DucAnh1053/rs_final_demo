@@ -7,7 +7,6 @@ import rankfm
 import pickle
 from utils.tools import recommend_cold_start, specialization_names, kc_names
 
-
 @st.cache_data
 def load_data():
     print("Loading dataset...")
@@ -121,7 +120,7 @@ if "predictions" in st.session_state:
             if f"selected_answer_{question._id}" not in st.session_state:
                 st.session_state[f"selected_answer_{question._id}"] = None
 
-            st.video("https://youtu.be/dQw4w9WgXcQ?si=W6FhhgEkyn6F5akb")
+            st.video(f"http://localhost:8000/openVideo/{question.multimedia}")
 
             selected_answer = st.radio(
                 f"Chọn câu trả lời",

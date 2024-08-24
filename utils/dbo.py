@@ -18,7 +18,7 @@ class Question(Document):
     title = StringField(required=True)
     content = StringField(required=True)
     difficulty = IntField(required=True)
-
+    multimedia = ObjectIdField(required=True)
     meta = {"collection": "questions"}
 
 
