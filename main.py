@@ -120,7 +120,13 @@ if "predictions" in st.session_state:
             if f"selected_answer_{question._id}" not in st.session_state:
                 st.session_state[f"selected_answer_{question._id}"] = None
 
-            st.video(f"http://localhost:8000/openVideo/{question.multimedia}")
+            # Add a button to trigger video display
+            if st.button("Xem video", key=f"video_button_{question._id}"):
+                st.session_state[f"show_video_{question._id}"] = True
+
+            # Display video only if the button was clicked
+            if st.session_state.get(f"show_video_{question._id}", False):
+                st.video(f"http://localhost:8000/openVideo/{question.multimedia}")
 
             selected_answer = st.radio(
                 f"Chọn câu trả lời",
